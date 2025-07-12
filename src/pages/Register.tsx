@@ -37,22 +37,22 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-900 dark:to-gray-800">
       <Header />
       
       <div className="container mx-auto px-4 pt-20 pb-16">
         <div className="max-w-md mx-auto">
-          <Card>
+          <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl">Join ReWear</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-2xl dark:text-white">Join ReWear</CardTitle>
+              <CardDescription className="dark:text-gray-300">
                 Start your sustainable fashion journey today
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label htmlFor="name">Full Name</Label>
+                  <Label htmlFor="name" className="dark:text-white">Full Name</Label>
                   <Input
                     id="name"
                     type="text"
@@ -60,11 +60,12 @@ const Register = () => {
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Enter your full name"
                     required
+                    className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email" className="dark:text-white">Email</Label>
                   <Input
                     id="email"
                     type="email"
@@ -72,11 +73,12 @@ const Register = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email"
                     required
+                    className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password" className="dark:text-white">Password</Label>
                   <Input
                     id="password"
                     type="password"
@@ -84,12 +86,13 @@ const Register = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Create a password"
                     required
+                    className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   />
                 </div>
 
                 <Button 
                   type="submit" 
-                  className="w-full bg-emerald-600 hover:bg-emerald-700"
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600"
                   disabled={isLoading}
                 >
                   {isLoading ? 'Creating Account...' : 'Create Account'}
@@ -97,9 +100,9 @@ const Register = () => {
               </form>
 
               <div className="mt-6 text-center">
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-300">
                   Already have an account?{' '}
-                  <Link to="/login" className="text-emerald-600 hover:text-emerald-700 font-medium">
+                  <Link to="/login" className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium">
                     Sign in here
                   </Link>
                 </p>

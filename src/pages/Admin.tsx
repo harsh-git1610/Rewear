@@ -1,241 +1,124 @@
 
-import { useAuth } from "@/contexts/AuthContext";
-import { Navigate } from "react-router-dom";
-import Header from "@/components/Header";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, X, Eye, AlertTriangle, Users, Package, TrendingUp } from "lucide-react";
-import { toast } from "sonner";
-
-const mockPendingItems = [
-  {
-    id: '1',
-    title: 'Designer Sneakers',
-    user: 'John D.',
-    category: 'Shoes',
-    condition: 'Like New',
-    submittedDate: '2024-01-12',
-    image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=200&h=200&fit=crop',
-    flagged: false
-  },
-  {
-    id: '2',
-    title: 'Vintage Band T-Shirt',
-    user: 'Mike R.',
-    category: 'Tops',
-    condition: 'Good',
-    submittedDate: '2024-01-11',
-    image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=200&h=200&fit=crop',
-    flagged: true
-  },
-  {
-    id: '3',
-    title: 'Summer Sundress',
-    user: 'Anna K.',
-    category: 'Dresses',
-    condition: 'Excellent',
-    submittedDate: '2024-01-10',
-    image: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=200&h=200&fit=crop',
-    flagged: false
-  }
-];
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 
 const Admin = () => {
-  const { user, isAuthenticated } = useAuth();
+  const [listings, setListings] = useState([]);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [selected, setSelected] = useState(null);
 
-  if (!isAuthenticated || !user?.isAdmin) {
-    return <Navigate to="/login" replace />;
-  }
+  useEffect(() => {
+    axios.get("http://localhost:5000/api/listings")
+      .then(res => setListings(res.data))
+      .catch(err => console.error(err));
+  }, []);
 
-  const handleApprove = (itemId: string) => {
-    console.log('Approving item:', itemId);
-    toast.success('Item approved and listed!');
+  const handleAccept = async (id) => {
+    await axios.patch(`http://localhost:5000/api/listings/${id}/accept`);
+    setListings(listings.map(l => l._id === id ? { ...l, status: "accepted" } : l));
   };
 
-  const handleReject = (itemId: string) => {
-    console.log('Rejecting item:', itemId);
-    toast.success('Item rejected and user notified.');
+  const handleReject = async (id) => {
+    const adminReview = prompt("Enter rejection reason (optional):");
+    await axios.patch(`http://localhost:5000/api/listings/${id}/reject`, { adminReview });
+    setListings(listings.map(l => l._id === id ? { ...l, status: "rejected", adminReview } : l));
   };
 
-  const handleView = (itemId: string) => {
-    console.log('Viewing item details:', itemId);
-    toast.info('Opening item details...');
+  // Filter and search
+  const filtered = listings.filter(l =>
+    (statusFilter === "all" || l.status === statusFilter) &&
+    (l.title.toLowerCase().includes(search.toLowerCase()) ||
+     l.user?.toLowerCase().includes(search.toLowerCase()))
+  );
+
+  // Count by status
+  const counts = {
+    pending: listings.filter(l => l.status === "pending").length,
+    accepted: listings.filter(l => l.status === "accepted").length,
+    rejected: listings.filter(l => l.status === "rejected").length,
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Admin Dashboard
-          </h1>
-          <p className="text-gray-600">
-            Manage item listings and platform oversight
-          </p>
-        </div>
-
-        {/* Stats Overview */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Pending Items</p>
-                  <p className="text-3xl font-bold text-orange-600">3</p>
-                </div>
-                <Package className="h-8 w-8 text-orange-600" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Active Users</p>
-                  <p className="text-3xl font-bold text-blue-600">127</p>
-                </div>
-                <Users className="h-8 w-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Items</p>
-                  <p className="text-3xl font-bold text-green-600">456</p>
-                </div>
-                <TrendingUp className="h-8 w-8 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Flagged Items</p>
-                  <p className="text-3xl font-bold text-red-600">1</p>
-                </div>
-                <AlertTriangle className="h-8 w-8 text-red-600" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Tabs defaultValue="pending" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="pending">Pending Approval</TabsTrigger>
-            <TabsTrigger value="flagged">Flagged Items</TabsTrigger>
-            <TabsTrigger value="users">User Management</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="pending">
-            <Card>
-              <CardHeader>
-                <CardTitle>Items Pending Approval</CardTitle>
-                <CardDescription>
-                  Review and moderate new item listings
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {mockPendingItems.map((item) => (
-                    <div key={item.id} className="flex items-center gap-4 p-4 border rounded-lg">
-                      <img 
-                        src={item.image} 
-                        alt={item.title}
-                        className="w-16 h-16 object-cover rounded-lg"
-                      />
-                      
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                              {item.title}
-                              {item.flagged && (
-                                <AlertTriangle className="h-4 w-4 text-red-500" />
-                              )}
-                            </h3>
-                            <p className="text-sm text-gray-600">
-                              by {item.user} • {item.category} • {item.condition}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Submitted: {item.submittedDate}
-                            </p>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" onClick={() => handleView(item.id)}>
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                              onClick={() => handleApprove(item.id)}
-                            >
-                              <Check className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => handleReject(item.id)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="flagged">
-            <Card>
-              <CardHeader>
-                <CardTitle>Flagged Items</CardTitle>
-                <CardDescription>
-                  Items reported by users that need attention
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">No flagged items at the moment</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="users">
-            <Card>
-              <CardHeader>
-                <CardTitle>User Management</CardTitle>
-                <CardDescription>
-                  Monitor user activity and manage accounts
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">User management features coming soon</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+    <div className="container mx-auto py-8">
+      <h1 className="text-2xl font-bold mb-4">Admin Panel - Manage Listings</h1>
+      <div className="flex gap-4 mb-4">
+        <Input
+          placeholder="Search by title or user"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="max-w-xs"
+        />
+        <select
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+          className="border rounded px-2 py-1"
+        >
+          <option value="all">All</option>
+          <option value="pending">Pending ({counts.pending})</option>
+          <option value="accepted">Accepted ({counts.accepted})</option>
+          <option value="rejected">Rejected ({counts.rejected})</option>
+        </select>
       </div>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {filtered.map(listing => (
+          <Card key={listing._id} className="bg-white rounded shadow p-4">
+            <img
+              src={listing.image}
+              alt={listing.title}
+              className="w-full h-40 object-cover rounded cursor-pointer"
+              onClick={() => setSelected(listing)}
+            />
+            <CardContent>
+              <h3 className="font-bold mt-2">{listing.title}</h3>
+              <p className="text-xs text-gray-500">By: {listing.user || "Unknown"}</p>
+              <p>Status: <span className={
+                listing.status === "pending" ? "text-yellow-600" :
+                listing.status === "accepted" ? "text-green-600" :
+                "text-red-600"
+              }>{listing.status}</span></p>
+              <p className="text-xs text-gray-400">Created: {new Date(listing.createdAt).toLocaleString()}</p>
+              {listing.adminReview && (
+                <p className="text-xs text-gray-500">Review: {listing.adminReview}</p>
+              )}
+              {listing.status === "pending" && (
+                <div className="flex gap-2 mt-2">
+                  <Button onClick={() => handleAccept(listing._id)} className="bg-green-600 text-white">Accept</Button>
+                  <Button onClick={() => handleReject(listing._id)} className="bg-red-600 text-white">Reject</Button>
+                </div>
+              )}
+              <Button onClick={() => setSelected(listing)} variant="outline" className="mt-2">Details</Button>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      {/* Details Modal */}
+      {selected && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-lg w-full relative">
+            <button className="absolute top-2 right-2 text-xl" onClick={() => setSelected(null)}>×</button>
+            <h2 className="text-xl font-bold mb-2">{selected.title}</h2>
+            <img src={selected.image} alt={selected.title} className="w-full h-60 object-cover rounded mb-2" />
+            <p><b>Description:</b> {selected.description}</p>
+            <p><b>User:</b> {selected.user}</p>
+            <p><b>Status:</b> {selected.status}</p>
+            {selected.adminReview && <p><b>Admin Review:</b> {selected.adminReview}</p>}
+            <p className="text-xs text-gray-400 mt-2">Created: {new Date(selected.createdAt).toLocaleString()}</p>
+            <div className="flex gap-2 mt-4">
+              {selected.status === "pending" && (
+                <>
+                  <Button onClick={() => { handleAccept(selected._id); setSelected(null); }} className="bg-green-600 text-white">Accept</Button>
+                  <Button onClick={() => { handleReject(selected._id); setSelected(null); }} className="bg-red-600 text-white">Reject</Button>
+                </>
+              )}
+              <Button onClick={() => setSelected(null)} variant="outline">Close</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
